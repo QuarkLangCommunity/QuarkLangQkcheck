@@ -252,6 +252,7 @@ func (c *checker) checkFunc(f *lang.FuncDecl) {
 		return
 	}
 	c.reads = map[string]int{}
+	c.hasCallInit = map[string]bool{}
 	c.params = map[string]bool{}
 	for _, p := range f.Params {
 		c.params[p.Name] = true
