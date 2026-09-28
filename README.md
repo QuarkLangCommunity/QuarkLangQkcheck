@@ -34,8 +34,7 @@ $ qkcheck clean.qk
 qkcheck: 0 个警告（1 个文件）
 
 $ qkcheck $(find ../QuarkLangLibs-Style -name '*.qk' -not -path '*/.git/*')
-.../style.qk:1524:35: 警告: [unused] 局部变量 "style" 声明后未被使用     # 真实死代码：tickNode 里取了 getStyle() 却没用
-qkcheck: 1 个警告（5 个文件）
+qkcheck: 0 个警告（5 个文件）
 ```
 
 各库抽查：Cleg 11 文件 0 警告、Regex 5 文件 0 警告、Json/Actions 各 1 文件 0 警告。

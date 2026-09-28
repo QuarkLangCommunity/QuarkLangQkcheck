@@ -29,14 +29,15 @@ type warning struct {
 }
 
 type checker struct {
-	file    string
-	warns   []warning
-	reads   map[string]int
-	scopes  []map[string]bool
-	params  map[string]bool
-	unused  bool
-	unreach bool
-	shadow  bool
+	file        string
+	warns       []warning
+	reads       map[string]int
+	hasCallInit map[string]bool
+	scopes      []map[string]bool
+	params      map[string]bool
+	unused      bool
+	unreach     bool
+	shadow      bool
 }
 
 func (c *checker) warn(p lang.Pos, kind, msg string) {
@@ -268,8 +269,8 @@ func (c *checker) checkFunc(f *lang.FuncDecl) {
 			if c.params[name] || strings.HasPrefix(name, "_") {
 				continue
 			}
-			if c.reads[name] == 0 {
-				c.warn(pos, "unused", fmt.Sprintf("局部变量 %q 声明后未被使用", name))
+			if c.reads[name] == 0 && !c.hasCallInit[name] {
+				c.warn(pos, "unused", fmt.Sprintf("局部变量 %q 声明后未被使用（初始化器无调用）", name))
 			}
 		}
 	}
@@ -288,6 +289,9 @@ func (c *checker) declaredLocals(b *lang.Block) map[string]lang.Pos {
 			case *lang.DeclStmt:
 				if _, dup := out[s.Name]; !dup {
 					out[s.Name] = s.Pos
+				}
+				if containsCall(s.Init) {
+					c.hasCallInit[s.Name] = true
 				}
 			case *lang.IfStmt:
 				walkBlock(s.Then)
@@ -319,6 +323,44 @@ func (c *checker) declaredLocals(b *lang.Block) map[string]lang.Pos {
 	}
 	walkBlock(b)
 	return out
+}
+
+// containsCall 判断表达式里是否含函数/方法/空间调用（可能有副作用，保守不报 unused）。
+func containsCall(e lang.Expr) bool {
+	found := false
+	var walk func(lang.Expr)
+	walk = func(x lang.Expr) {
+		switch v := x.(type) {
+		case nil:
+			return
+		case *lang.CallExpr:
+			found = true
+		case *lang.ScopeCall:
+			found = true
+		case *lang.NewExpr:
+			found = true
+		case *lang.BinOp:
+			walk(v.L)
+			walk(v.R)
+		case *lang.UnOp:
+			walk(v.X)
+		case *lang.MemberExpr:
+			walk(v.X)
+		case *lang.IndexExpr:
+			walk(v.X)
+			walk(v.Idx)
+		case *lang.ListLit:
+			for _, it := range v.Items {
+				walk(it)
+			}
+		case *lang.StructLit:
+			for _, f := range v.Fields {
+				walk(f.X)
+			}
+		}
+	}
+	walk(e)
+	return found
 }
 
 func main() {
