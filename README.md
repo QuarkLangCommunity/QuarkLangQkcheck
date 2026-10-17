@@ -1,5 +1,10 @@
 # QuarkLangQkcheck
 
+> **Superseded. The maintained implementation** is
+> [`cmd/qkcheck`](https://github.com/QuarkLangCommunity/QuarkLangQkc/tree/main/cmd/qkcheck)
+> in the QuarkLang compiler repository. This standalone repository is kept for history; it is not
+> updated from that source, and its code differs from the maintained implementation.
+
 QuarkLang 静态检查（lint）——工具链成员。基于语言自身的词法/语法/类型检查（`internal/lang`），在**能编译**的前提下再做额外检查。
 
 ## 用法
